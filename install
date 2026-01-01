@@ -189,6 +189,9 @@ setup_hyprlock() {
 }
 
 move_files() {
+	mkdir -p "$HOME"/.local/share/fonts/ttf
+	mv -b "$S_PATH"/to_move/*.ttf "$HOME"/.local/share/fonts/ttf/
+	echo "Moved fonts to $HOME/.local/share/fonts/ttf/"
 	if [ -d "$S_HYPRPATH" ]; then
 		for file in "$S_PATH"/to_move/*; do
 			mv -b --suffix="-pre-sakoora" "$file" "$S_HYPRPATH"

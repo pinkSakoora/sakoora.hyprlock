@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-export S_DEPS=0
-export S_SETUP=0
-export S_MOVED=0

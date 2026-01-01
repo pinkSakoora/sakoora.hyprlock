@@ -54,7 +54,7 @@ hyprland hyprlock wlr-randr imagemagick grim bluez-utils networkmanager playerct
 - `playerctl` is used to fetch info about currently playing media.
 
 ## Notes
-1. Every file created/modified by the installer is located within `~/.config/hypr/sakoora.hyprlock`, with the except of `hyprlock.conf`. The old `hyprlock.conf` (if any) has a prefix of `-pre-sakoora` added to it.
+1. Every file created/modified by the installer is located within `~/.config/hypr/sakoora.hyprlock`, with the except of `hyprlock.conf`, and font files. The old `hyprlock.conf` (if any) has a prefix of `-pre-sakoora` added to it. The added fonts are Josefin Sans and Fira Code Nerd Font Mono (at `~/.local/share/fonts/ttf`.)
 2. The panels drawing script creates a folder named `hyprlock-cache` in `~/.cache`, in which it stores all drawn panels. This script should be called before hyprlock is launched to ensure accurate panel blurring.
 
 An example hypridle listener would be:
@@ -68,4 +68,4 @@ And an example hyprland keybind to lock the screen would be:
 ```
 bind = $mainMod, W, exec, ~/.config/hypr/sakoora.hyprlock/hyprlock-run/panels && hyprlock --grace 5
 ```
-3. The default installed theme is a modified version of catppuccin-macchiato. The colors can be changed by modifying them in `~/.config/hypr/sakoora.hyprlock/colors-hyprlock.sh` and `~/.config/hypr/sakoora.hyprlock/colors-hyprlock.conf`
+3. The default installed theme is a modified version of catppuccin-macchiato. The colors can be changed by modifying them in `~/.config/hypr/sakoora.hyprlock/colors-hyprlock.sh` and `~/.config/hypr/sakoora.hyprlock/colors-hyprlock.conf`.

@@ -1,0 +1,222 @@
+#!/usr/bin/env bash
+
+# Created by pinkSakoora (https://github.com/pinkSakoora)
+# Distributed under MIT
+# Last changed: 01/01/26
+
+S_PATH="$(dirname "$(readlink -f "$0")")"
+S_HYPRPATH="$HOME"/.config/hypr
+source "$S_PATH"/flaglist
+
+# The flow is as follows:
+# Check for dependencies (hyprlock, hyprland, wlr-randr, imagemagick, grim, bluez-utils (for bluetoothctl), NetworkManager, playerctl)
+# Install when needed, send Ok otherwise
+# Check if hyprland is running (via wlr-randr)
+# Run the size selection and file creation
+# Move the required scripts
+# Post install messages
+
+ok() { echo "✔ " "$@"; }
+cross() { echo "✖ " "$@"; }
+part_done() { sed -i "s/$1=0/$1=1/" "$S_PATH/flaglist"; }
+
+confirm() {
+	local response default=${2:-"Y"}					# default is Y if no argument sent
+	[ "$default" = "Y" ] && local responsebox="[Y/n]"	# Set responsebox to [Y/n] if no prompt
+	while true; do
+		read -rp "$1 ${responsebox:-'[y/N]'}: " response	# If responsebox wasn't set then respbox is [y/N]
+		response="${response:-$default}"					# If response wasn't input then it's default
+		case $response in
+			[Yy]* ) return 0;;
+			[Nn]* ) return 1;;
+			* ) echo "Invalid input.";;
+		esac
+	done
+}
+
+execute() {
+	"$@"
+	exitcode=${PIPESTATUS[0]}
+	return "$exitcode"
+}
+
+command_fail(){
+	case "$1" in
+		1 ) cross "Failed to install dependencies. Pacman exit code: $exitcode";;
+		2 ) cross "Could not find $S_HYPRPATH. [S_HYPRPATH not found: $1]";;
+		3 ) cross "Hyprland is currently not running, launch Hyprland to continue. [Hyprland not running: $1]";;
+		4 ) cross "Exiting installer on user prompt. [Package installation abort: $1]";;
+		5 ) cross "Exiting installer on user prompt. [Pre-installation abort: $1]";;
+	esac
+	exit "$1"
+}
+
+show_progress() {
+	echo "Progress:"
+	if [ "$S_DEPS" -eq 0 ]; then
+		cross "Dependencies not installed."
+	else
+		ok "Dependencies installed."
+	fi
+	if [ "$S_SETUP" -eq 0 ]; then
+		cross "Hyprlock configuration not set up."
+	else
+		ok "Hyprlock configuration set up."
+	fi
+	if [ "$S_MOVED" -eq 0 ]; then
+		cross "Hyprlock configuration and scripts not moved."
+	else
+		ok "Hyprlock configuration and scripts moved."
+	fi
+}
+
+check_deps() {
+	deps=("hyprland" "hyprlock" "wlr-randr" "imagemagick" "grim" "bluez-utils" "networkmanager" "playerctl")
+	not_installed=()
+	echo "Checking for dependencies..."
+	for dep in "${deps[@]}"; do
+		if pacman -Q | grep -q "$dep"; then
+			ok "$dep"
+		else
+			cross "$dep"
+			not_installed+=("$dep")
+		fi
+	done
+}
+
+install_deps() {
+	if [ ${#not_installed[@]} -eq 0 ]; then
+		echo "All required packages are already installed."
+		part_done "S_DEPS"
+		return
+	fi
+	echo -en "The following packages need to be installed before proceeding:\n ${not_installed[*]}"
+	if confirm "Proceed?"; then
+		execute sudo pacman -Syu --noconfirm --noprogressbar "${not_installed[*]}" || command_fail 1
+	else
+		command_fail 3
+	fi
+	part_done "S_DEPS"
+}
+
+setup_hyprlock() {
+	S_SIZEFILE="$S_PATH"/to_move/sakoora.hyprlock/sizes-hyprlock.sh
+	S_SIZEFILECONF="$S_PATH"/to_move/sakoora.hyprlock/sizes-hyprlock.conf
+	[ -f "$S_SIZEFILE" ] && rm "$S_SIZEFILE"
+	touch "$S_SIZEFILE"
+	[ -f "$S_SIZEFILECONF" ] && rm "$S_SIZEFILECONF"
+	touch "$S_SIZEFILECONF"
+	echo "Setting up hyprlock for your display resolution."
+
+	resolution=$(wlr-randr | grep "current" | awk '{print $1}')
+	width=$(echo "$resolution" | cut -dx -f1)
+	height=$(echo "$resolution" | cut -dx -f2)
+	[ $((4*height/9)) -ge $((width/4)) ] && pw=$((width/4)) || pw=$((4*height/9))
+	pp=$((pw/12))
+	{
+		echo "#################"
+		echo "### UNIVERSAL ###"
+		echo "#################"
+		echo "\$body_font = $((pp/2))"
+		echo "\$huge_font = $((pp*5/2))"
+		echo "\$heading_font = $((pp*5/4))"
+		echo "\$large_font = $((pp*3/4))"
+		echo "\$small_font = $((pp*3/8))"
+
+		echo "################"
+		echo "### TOP LEFT ###"
+		echo "################"
+		echo "\$top_left_offset = $((-pw/2-pp/2)), $((pw/4+pp/2))"
+		echo "\$pw_box_offset = $((-pw/2-pp/2)), $((height/2-pp*3/2))"
+		echo "\$un_box_offset = $((-pw/2-pp/2)), $((height/2+pp*3/2))"
+		echo "\$pw_text_offset = $((width/2-pw+pp)), $((height/2))"
+		echo "\$un_text_offset = $((width/2-pw+pp)), $((height/2+pp*3))"
+		echo "\$login_text_offset = $((-pw/2-pp/2)), $((height/2+pp*5))"
+		echo "\$hostname_text_offset = $((-pw/2-pp/2)), $((height/2+pp*15/2))"
+		echo "\$un_value_offset = $((width/2-pw+pp)), $((height/2+pp*9/4))"
+		echo "\$input_field_offset = $((width/2-pw+pp/2)), $((height/2-pp*3/2))"
+		echo "\$top_left_size = $pw"
+		echo "\$container_box_size = $((pw-pp*2)), $((pp*5/2))"
+		echo "\$input_field_size = $((pw-pp*2)), $((pp*2))"
+
+		echo "###################"
+		echo "### BOTTOM LEFT ###"
+		echo "###################"
+		echo "\$bottom_left_offset = $((-pw/2-pp/2)), $((-pw/2-pp/2))"
+		echo "\$time_text_offset = $((-pw/2-pp/2)), $((-height/2-pw/4-pp*3/2))"
+		echo "\$uptime_ltext_offset = $((width/2-pw+pp*5/2)), $((height/2-pw*3/4+pp/2))"
+		echo "\$uptime_rtext_offset = $((-width/2-pp*7/2)), $((height/2-pw*3/4+pp/2))"
+		echo "\$bottom_left_size = $((pw/2))"
+
+		echo "#############"
+		echo "### RIGHT ###"
+		echo "#############"
+		echo "\$right_offset = $((pw/2+pp/2)), 0"
+		echo "\$right_bottom_box_offset = $((pw/2+pp/2)), $((height/2-pw))"
+		echo "\$network_box_offset = $((pw*3/16+pp*3/2)), $((height/2-pw*5/8+pp*2))"
+		echo "\$bluetooth_box_offset = $((pw*9/16+pp*5/2)), $((height/2-pw*5/8+pp*2))"
+		echo "\$power_box_offset = $((pw/2+pp/2)), $((height/2-pw+pp))"
+		echo "\$image_offset = $((pw/2+pp/2)), $((height/2+pw*1/8+pp*5))"
+		echo "\$media_symbol_offset = $((pw/2+pp/2)), $((-height/2+pp/2))"
+		echo "\$network_symbol_offset = $((pw*3/16+pp*3/2)), $((height/2-pw*5/8+pp*7/2))"
+		echo "\$bluetooth_symbol_offset = $((pw*9/16+pp*5/2)), $((height/2-pw*5/8+pp*7/2))"
+		echo "\$day_value_offset = $((pw/2+pp/2)), $((height/2+pw*1/8+pp*2))"
+		echo "\$date_value_offset = $((pw/2+pp/2)), $((height/2+pw*1/8+pp))"
+		echo "\$media_content_value_offset = $((pw/2+pp/2)), $((-height/2-pp/2))"
+		echo "\$media_player_value_offset = $((pw/2+pp/2)), $((-height/2-pp*5/4))"
+		echo "\$network_value_offset = $((pw*3/16+pp*3/2)), $((height/2-pw*5/8+pp*11/4))"
+		echo "\$bluetooth_value_offset = $((pw*9/16+pp*5/2)), $((height/2-pw*5/8+pp*11/4))"
+		echo "\$power_status_value_offset = $((pw/2+pp/2)), $((height/2-pw+pp*2))"
+		echo "\$power_percent_value_offset = $((pw/2+pp/2)), $((height/2-pw+pp*5/2))"
+		echo "\$power_indicator_value_offset = $((pw/2+pp/2)), $((height/2-pw+pp*4))"
+		echo "\$right_size = $pw"
+		echo "\$right_bottom_box_size = $pw, $((pw*9/8))"
+		echo "\$power_box_size = $((pw-pp*2)), $((pw*3/8))"
+		echo "\$connection_box_size = $((pw*3/8)), $((pw/4))"
+		echo "\$image_size = $((pw/3))"
+	} >> "$S_SIZEFILECONF"
+	{
+		echo "initial_cutout_offset=$((width/2-pw))+$((height/2-pp/2-pw))"
+		echo "top_left_offset=0+$((pw*1/3-pp/2))"
+		echo "bottom_left_offset=0+$((pw*4/3-pp*3/2))"
+		echo "right_offset=$((pw+pp))+0"
+		echo "initial_cutout_size=$((pw*2+pp))x$((pw*2))"
+		echo "top_left_size=$((pw))x$pw"
+		echo "bottom_left_size=$((pw))x$((pw/2))"
+		echo "right_size=$((pw))x$((pw*2))"
+	} >> "$S_SIZEFILE"
+	part_done "S_SETUP"
+}
+
+move_files() {
+	if [ -d "$S_HYPRPATH" ]; then
+		for file in "$S_PATH"/to_move/*; do
+			mv -b --suffix="-pre-sakoora" "$file" "$S_HYPRPATH"
+			echo "$file moved to $S_HYPRPATH"
+		done
+	else
+		command_fail 2
+	fi
+	part_done "S_MOVED"
+}
+
+clear
+show_progress
+if [ "$((S_DEPS+S_SETUP+S_MOVED))" -eq 3 ]; then
+	echo "Installation has already been completed!"
+	exit
+elif ! confirm "Proceed with installation?"; then
+	command_fail 5
+fi
+if [ "$S_DEPS" -eq 0 ]; then
+	check_deps
+	install_deps
+fi
+printenv HYPRLAND_INSTANCE_SIGNATURE &> /dev/null || command_fail 3
+if [ "$S_SETUP" -eq 0 ]; then
+	setup_hyprlock
+fi
+if [ "$S_MOVED" -eq 0 ]; then
+	move_files
+fi
+echo "Installation completed!"

@@ -1,0 +1,22 @@
+#!/bin/sh
+
+. "$HOME"/.config/themes/colors.sh				# Pywal colors
+. "$HOME"/.config/hypr/sizes-hyprlock.sh		# Get size of panels according to screen size
+
+cache_dir="$HOME"/.cache/hyprlock-cache
+[ ! -d "$cache_dir" ] && mkdir -p "$cache_dir"	# Make cache directory if it's not there
+
+grim "$cache_dir/screenshot.png"
+
+# Crop screenshot to required size
+# Resize to 0.1x, apply size 5 blur, resize to 10x (essentially being 50x blur for less resources used)
+# Generate a 0.1x size overlay of $color1, 40% alpha and resize it 10x
+# Composite it on top of blurred screenshot
+# Split top and bottom panels
+
+magick \( "$cache_dir"/screenshot.png -crop "$initial_cutout_size"+"$initial_cutout_offset" -scale 10% -blur 0x5 -resize 1000% +repage \) \
+	\( -size "$initial_cutout_size" xc:"$background" -alpha set -channel A -evaluate set 40% \) \
+	-composite "$cache_dir"/combi.png
+magick "$cache_dir"/combi.png -crop "$top_left_size"+"$top_left_offset" "$cache_dir"/top_left_panel.png
+magick "$cache_dir"/combi.png -crop "$bottom_left_size"+"$bottom_left_offset" "$cache_dir"/bottom_left_panel.png
+magick "$cache_dir"/combi.png -crop "$right_size"+"$right_offset" "$cache_dir"/right_panel.png

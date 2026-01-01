@@ -1,0 +1,114 @@
+#!/bin/sh
+
+. "$HOME"/.config/themes/colors.sh
+percentage() {
+	if [ "$desktop" -eq "1" ]; then
+		echo "<span>  </span>"
+		exit
+	fi
+	total_max=0
+	total_current=0
+	for battery in /sys/class/power_supply/BAT*; do
+		current=$(cat "$battery"/charge_now)
+		max=$(cat "$battery"/charge_full)
+
+		total_max=$((total_max+max))
+		total_current=$((total_current+current))
+	done
+	average_percent=$((total_current*100/total_max))
+	return "$average_percent"
+}
+
+status() {
+	if [ "$desktop" -eq "1" ]; then
+		echo " "
+		exit
+	fi
+	bat_count=0
+	a_count=0
+	b_count=0
+	for battery in /sys/class/power_supply/BAT*; do
+		status=$(cat "$battery"/status)
+		case "$status" in
+			"Charging" )
+				return 1;;
+			"Discharging" )
+				return 2;;
+			"Not charging" )
+				a_count=$((a_count+1));;
+			"Full" )
+				b_count=$((b_count+1));;
+		esac
+		bat_count=$((bat_count+1))
+	done
+	if [ "$a_count" -eq "$bat_count" ]; then
+		status="Not charging"
+		return 3
+	elif [ "$b_count" -eq "$bat_count" ]; then
+		status="Full"
+		return 4
+	else
+		status="Unknown"
+		return 5
+	fi
+}
+
+indicator() {
+	if [ "$desktop" -eq "1" ]; then
+		echo "<span background='$background' foreground='$color2'> On desktop </span>"
+		exit
+	fi
+	percentage
+	percent=$?
+	status
+	case $? in
+		1 )
+			symbol="<span>  </span>";;
+		2 )
+			symbol="<span weight='bold'> ! </span>";;
+		3 )
+			symbol="<span>  </span>";;
+		4 )
+			symbol="<span>  </span>";;
+		5 )
+			symbol="<span weight='bold'> ? </span>";;
+	esac
+	if [ $percent -gt 90 ]; then
+		echo "<span background='$background' foreground='$color2'>    $symbol    </span>"
+	elif [ $percent -gt 80 ]; then
+		echo "<span background='$background' foreground='$color2'>    $symbol   </span> <span foreground='$color2'></span>"
+	elif [ $percent -gt 70 ]; then
+		echo "<span background='$background' foreground='$color2'>    $symbol  </span>  <span foreground='$color2'></span>"
+	elif [ $percent -gt 60 ]; then
+		echo "<span background='$background' foreground='$color2'>    $symbol </span>   <span foreground='$color2'></span>"
+	elif [ $percent -gt 50 ]; then
+		echo "<span background='$background' foreground='$color2'>    $symbol</span>    <span foreground='$color2'></span>"
+	elif [ $percent -gt 40 ]; then
+		echo "<span background='$background' foreground='$color2'>    </span>$symbol    <span foreground='$color2'></span>"
+	elif [ $percent -gt 30 ]; then
+		echo "<span background='$background' foreground='$color2'>   </span> $symbol    <span foreground='$color2'></span>"
+	elif [ $percent -gt 20 ]; then
+		echo "<span background='$background' foreground='$color2'>  </span>  $symbol    <span foreground='$color2'></span>"
+	elif [ $percent -gt 10 ]; then
+		echo "<span background='$background' foreground='$color2'> </span>   $symbol    <span foreground='$color2'></span>"
+	else
+		echo "<span background='$background' foreground='$color2'></span>    $symbol    <span foreground='$color2'></span>"
+	fi
+}
+
+if hostnamectl | grep -q "Chassis: laptop"; then
+	desktop=0
+else
+	desktop=1
+fi
+case "$1" in
+	"-i" )
+		indicator;;
+	"-p" )
+		percentage
+		percent=$?
+		echo "$percent%";;
+	"-s" )
+		status
+		echo "<span style='italic' weight='light'> $status </span>";;
+esac

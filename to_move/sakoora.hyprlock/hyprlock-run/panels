@@ -1,7 +1,7 @@
 #!/bin/sh
 
-. "$HOME"/.config/themes/colors.sh				# Pywal colors
-. "$HOME"/.config/hypr/sizes-hyprlock.sh		# Get size of panels according to screen size
+. "$HOME"/.config/hypr/sakoora.hyprlock/colors-hyprlock.sh		# Colors
+. "$HOME"/.config/hypr/sakoora.hyprlock/sizes-hyprlock.sh		# Get size of panels according to screen size
 
 cache_dir="$HOME"/.cache/hyprlock-cache
 [ ! -d "$cache_dir" ] && mkdir -p "$cache_dir"	# Make cache directory if it's not there

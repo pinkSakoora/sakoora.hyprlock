@@ -44,9 +44,8 @@ The installer asks for confirmation before installing required packages.
 
 If you wish to install the dependencies manually, they are:
 ```
-hyprland hyprlock wlr-randr imagemagick grim bluez-utils networkmanager playerctl
+hyprland hyprlock imagemagick grim bluez-utils networkmanager playerctl
 ```
-- `wlr-randr` is required to fetch screen resolution.
 - `imagemagick` is requied to draw panels.
 - `grim` is used to take a screenshot for the drawing of panels.
 - `bluez-utils` provides `bluetoothctl` which is used for the bluetooth indicator.
@@ -54,7 +53,7 @@ hyprland hyprlock wlr-randr imagemagick grim bluez-utils networkmanager playerct
 - `playerctl` is used to fetch info about currently playing media.
 
 ## Notes
-1. Every file created/modified by the installer is located within `~/.config/hypr/sakoora.hyprlock`, with the except of `hyprlock.conf`, and font files. The old `hyprlock.conf` (if any) has a prefix of `-pre-sakoora` added to it. The added fonts are Josefin Sans and Fira Code Nerd Font Mono (at `~/.local/share/fonts/ttf`.)
+1. Every file created/modified by the installer is located within `~/.config/hypr/sakoora.hyprlock`, with the except of `hyprlock.conf`, and font files. The old `hyprlock.conf` (if any) has a suffix of `-pre-sakoora` added to it. The added fonts are Josefin Sans and Fira Code Nerd Font Mono (at `~/.local/share/fonts/ttf`.)
 2. The panels drawing script creates a folder named `hyprlock-cache` in `~/.cache`, in which it stores all drawn panels. This script should be called before hyprlock is launched to ensure accurate panel blurring.
 
 An example hypridle listener would be:

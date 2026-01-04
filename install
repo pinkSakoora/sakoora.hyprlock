@@ -9,9 +9,9 @@ S_HYPRPATH="$HOME"/.config/hypr
 source "$S_PATH"/flaglist
 
 # The flow is as follows:
-# Check for dependencies (hyprlock, hyprland, wlr-randr, imagemagick, grim, bluez-utils (for bluetoothctl), NetworkManager, playerctl)
+# Check for dependencies (hyprlock, hyprland, imagemagick, grim, bluez-utils (for bluetoothctl), NetworkManager, playerctl)
 # Install when needed, send Ok otherwise
-# Check if hyprland is running (via wlr-randr)
+# Check if hyprland is running (PRINTENV)
 # Run the size selection and file creation
 # Move the required scripts
 # Post install messages
@@ -71,7 +71,7 @@ show_progress() {
 }
 
 check_deps() {
-	deps=("hyprland" "hyprlock" "wlr-randr" "imagemagick" "grim" "bluez-utils" "networkmanager" "playerctl")
+	deps=("hyprland" "hyprlock" "imagemagick" "grim" "bluez-utils" "networkmanager" "playerctl")
 	not_installed=()
 	echo "Checking for dependencies..."
 	for dep in "${deps[@]}"; do
@@ -108,7 +108,7 @@ setup_hyprlock() {
 	touch "$S_SIZEFILECONF"
 	echo "Setting up hyprlock for your display resolution."
 
-	resolution=$(wlr-randr | grep "current" | awk '{print $1}')
+	resolution=$(hyprctl monitors | grep -m1 -oP '\S.{1,}(?=@)')
 	width=$(echo "$resolution" | cut -dx -f1)
 	height=$(echo "$resolution" | cut -dx -f2)
 	[ $((4*height/9)) -ge $((width/4)) ] && pw=$((width/4)) || pw=$((4*height/9))

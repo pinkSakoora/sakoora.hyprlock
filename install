@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
 # Created by pinkSakoora (https://github.com/pinkSakoora)
-# Distributed under MIT
-# Last changed: 01/01/26
+# Last changed: 08/04/26
 
 S_PATH="$(dirname "$(readlink -f "$0")")"
 S_HYPRPATH="$HOME"/.config/hypr
@@ -12,6 +11,7 @@ source "$S_PATH"/flaglist
 # Check for dependencies (hyprlock, hyprland, imagemagick, grim, bluez-utils (for bluetoothctl), NetworkManager, playerctl)
 # Install when needed, send Ok otherwise
 # Check if hyprland is running (PRINTENV)
+# Select style(s) to install
 # Run the size selection and file creation
 # Move the required scripts
 # Post install messages

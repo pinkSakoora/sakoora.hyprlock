@@ -3,9 +3,9 @@
 # Created by pinkSakoora (https://github.com/pinkSakoora)
 # Last changed: 08/04/26
 
-S_PATH="$(dirname "$(readlink -f "$0")")"
+export S_PATH="$(dirname "$(readlink -f "$0")")"
 S_HYPRPATH="$HOME"/.config/hypr
-NUM_STYLES=1
+NUM_STYLES=2
 source "$S_PATH"/flaglist
 
 # The flow is as follows:
@@ -101,32 +101,41 @@ install_deps() {
 }
 
 setup_hyprlock() {
+	export width
+	export height
+	export pw
+	export pp
 	resolution=$(hyprctl monitors | grep -m1 -oP '\S.{1,}(?=@)')
 	width=$(echo "$resolution" | cut -dx -f1)
 	height=$(echo "$resolution" | cut -dx -f2)
 	[ $((4*height/9)) -ge $((width/4)) ] && pw=$((width/4)) || pw=$((4*height/9))
 	pp=$((pw/12))
 
-	read -rp "Select styles to set up (available: $NUM_STYLES, default: all): (eg: \"1 2 3\", \"2-4\") " input
-	input=${input:="1-$NUM_STYLES"}
-	for part in $input; do
-		if [[ $part =~ ^([0-9]+)-([0-9]+)$ ]]; then
-			first=${BASH_REMATCH[1]}
-			last=${BASH_REMATCH[2]}
-			if (( first < 1 || last > NUM_STYLES || first > last )); then
-				echo "Invalid input. $part is out of bounds (1-$NUM_STYLES)."
-				continue
+	while true; do
+		read -rp "Select styles to set up (available: $NUM_STYLES, default: all): (eg: \"1 2 3\", \"2-4\") " input
+		input=${input:="1-$NUM_STYLES"}
+		for part in $input; do
+			if [[ $part =~ ^([0-9]+)-([0-9]+)$ ]]; then
+				first=${BASH_REMATCH[1]}
+				last=${BASH_REMATCH[2]}
+				if (( first < 1 || last > NUM_STYLES || first > last )); then
+					echo "Invalid input. $part is out of bounds (1-$NUM_STYLES)."
+					break
+				fi
+				for (( n=first; n<=last; n++ )); do
+					styles+=("$n")
+				done
+			elif [[ $part =~ ^[0-9]+$ ]]; then
+				if (( part >= 1 && part <= NUM_STYLES )); then
+					styles+=("$part")
+				else
+					echo "Invalid input. $part is out of bounds (1-$NUM_STYLES)."
+					break
+				fi
 			fi
-			for (( n=first; n<=last; n++ )); do
-				styles+=("$n")
-			done
-		elif [[ $part =~ ^[0-9]+$ ]]; then
-			if (( part >= 1 && part <= NUM_STYLES )); then
-				styles+=("$part")
-			else
-				echo "Invalid input. $part is out of bounds (1-$NUM_STYLES)."
-				continue
-			fi
+		done
+		if [ ${#styles[@]} -gt 0 ]; then
+			break	
 		fi
 	done
 	

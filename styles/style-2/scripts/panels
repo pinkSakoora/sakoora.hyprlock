@@ -14,9 +14,9 @@ mapfile -t x_offsets < <(shuf -i 0-$((img_width-cut_size_x)) -n 3)
 mapfile -t y_offsets < <(shuf -i 0-$((img_height-cut_size_y)) -n 3) 
 
 for i in {0..2}; do
-	magick \( "$WALL_PATH" -crop "$cut_size_x"x"$cut_size_y"+"${x_offsets[i]}"+"${y_offsets[i]}" +repage -resize 50% \) "$CACHE_DIR/cut-$i.png"
+	magick \( "$WALL_PATH" -crop "$cut_size_x"x"$cut_size_y"+"${x_offsets[i]}"+"${y_offsets[i]}" +repage -resize 50% \) "$CACHE_DIR/cut_$i.png"
 done
 
 magick -size $gradient_size gradient:$color1-$color2 "$CACHE_DIR/gradient_top.png"
-magick -size $gradient_size -define gradient:direction=SouthWest gradient:$color0-$color1 "$CACHE_DIR/gradient_mid.png"
-magick -size $gradient_size -define gradient:direction=West gradient:$color0-$color2 "$CACHE_DIR/gradient_bot.png"
+magick -size $gradient_size -define gradient:direction=SouthWest gradient:$background-$color1 "$CACHE_DIR/gradient_mid.png"
+magick -size $gradient_size -define gradient:direction=West gradient:$background-$color2 "$CACHE_DIR/gradient_bot.png"

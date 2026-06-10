@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Created by pinkSakoora (https://github.com/pinkSakoora)
-# Last changed: 08/04/26
+# Last changed: 27/04/26
 
 export S_PATH="$(dirname "$(readlink -f "$0")")"
 S_HYPRPATH="$HOME"/.config/hypr

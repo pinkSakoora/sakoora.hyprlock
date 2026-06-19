@@ -142,28 +142,65 @@ setup_hyprlock() {
 			break	
 		fi
 	done
-	
+
 	echo "Styles to be set up: ${styles[*]}"
 	for style in "${styles[@]}"; do
 		[ ! -x "$S_PATH/style-$style" ] && command_fail 6
 		"$S_PATH/style-$style" || command_fail 7
 	done
 	
+	if [ ${#styles[@]} -eq 1 ]; then
+		default_style="${styles[0]}"
+		echo "Only one style set up. Defaulting to style-$default_style."
+	else
+		while true; do
+			read -rp "Select default style: ${styles[*]} " default_style
+			if [[ " ${styles[*]} " =~ $default_style ]] && [[ -n "$default_style" ]]; then
+				break
+			else
+				echo "Invalid input."
+			fi
+		done
+	fi
+	echo "Setting style-$default_style as default."
+
 	part_done "S_SETUP"
 }
 
 move_files() {
 	mkdir -p "$HOME"/.local/share/fonts/ttf || command_fail 8
 	mv -b "$S_PATH"/to_move/*.ttf "$HOME"/.local/share/fonts/ttf/ || command_fail 9
-	echo "Moved fonts to $HOME/.local/share/fonts/ttf/"
+	ok "Moved fonts to $HOME/.local/share/fonts/ttf/"
 	if [ -d "$S_HYPRPATH" ]; then
 		for file in "$S_PATH"/to_move/*; do
 			mv -b --suffix="-pre-sakoora" "$file" "$S_HYPRPATH" || command_fail 10
-			echo "$file moved to $S_HYPRPATH"
+			ok "$file moved to $S_HYPRPATH"
 		done
 	else
 		command_fail 2
 	fi
+
+	S_SAKOORA="$S_HYPRPATH/sakoora.hyprlock"
+	S_LOCK="$S_HYPRPATH/hyprlock.conf"
+	S_SOURCE="source = $S_SAKOORA/current_style.conf"
+
+	ln -sf "$S_SAKOORA/style-$default_style/hyprlock.conf" "$S_SAKOORA/current_style.conf" || command_fail 11
+
+	if [ -L "$S_LOCK" ]; then
+		echo "$S_LOCK is currently a symlink."
+		mv "$S_LOCK" "$S_LOCK-pre-sakoora"
+		echo -e "\n# sakoora.hyprlock\n$S_SOURCE" >> "$S_LOCK"
+		ok "Replaced symlink with config (at $S_LOCK). Old symlink stored at $S_LOCK-pre-sakoora."
+	elif [ -f "$S_LOCK" ]; then
+		if ! grep -Fxq "$S_SOURCE" "$S_LOCK"; then
+			echo -e "\n# sakoora.hyprlock\n$S_SOURCE" >> "$S_LOCK"
+			ok "Added sakoora.hyprlock entry to existing hyprlock config (at $S_LOCK)"
+		fi
+	else
+		echo -e "# sakoora.hyprlock\n$S_SOURCE" > "$S_LOCK"
+		ok "Created hyprlock config file at $S_LOCK"
+	fi
+
 	part_done "S_MOVED"
 }
 

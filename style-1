@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
+set -e
 
 S_SIZEFILE="$S_PATH"/styles/style-1/sizes-hyprlock.sh
 S_SIZEFILECONF="$S_PATH"/styles/style-1/sizes-hyprlock.conf
-[ -f "$S_SIZEFILE" ] && rm "$S_SIZEFILE"
-touch "$S_SIZEFILE"
-[ -f "$S_SIZEFILECONF" ] && rm "$S_SIZEFILECONF"
-touch "$S_SIZEFILECONF"
+
+rm -f "$S_SIZEFILE" "$S_SIZEFILECONF"
+touch "$S_SIZEFILE" "$S_SIZEFILECONF"
+
 echo "Setting up style-1 for your display resolution."
 
 {
@@ -81,4 +82,4 @@ echo "Setting up style-1 for your display resolution."
 	echo "right_size=$((pw))x$((pw*2))"
 } >> "$S_SIZEFILE"
 
-mv "$S_PATH"/styles/style-1 "$S_PATH"/to_move/sakoora.hyprlock
+mv "$S_PATH"/styles/style-1 "$S_PATH"/to_move/sakoora.hyprlock/

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Created by pinkSakoora (https://github.com/pinkSakoora)
-# Last changed: 27/04/26
+# Last changed: 19/07/26
 
 export S_PATH="$(dirname "$(readlink -f "$0")")"
 S_HYPRPATH="$HOME"/.config/hypr
@@ -48,6 +48,10 @@ command_fail(){
 		3 ) cross "Hyprland is currently not running, launch Hyprland to continue. [Hyprland not running: $1]";;
 		4 ) cross "Exiting installer on user prompt. [Package installation abort: $1]";;
 		5 ) cross "Exiting installer on user prompt. [Pre-installation abort: $1]";;
+		6 ) cross "Style script (at $S_PATH/style-$style) does not exist or is not executable. [File error: $1]";;
+		7 ) cross "Style script (at $S_PATH/style-$style) encountered an error during execution. [Execution error: $1]";;
+		8 ) cross "Failed to create directory. Permission denied or path invalid. [Filesystem error: $1]";;
+		9 | 10 ) cross "Failed to move files. Source missing or permission denied. [Filesystem error: $1]";;
 	esac
 	exit "$1"
 }
@@ -95,7 +99,7 @@ install_deps() {
 	if confirm "Proceed?"; then
 		execute sudo pacman -Syu --noconfirm --noprogressbar "${not_installed[*]}" || command_fail 1
 	else
-		command_fail 3
+		command_fail 4
 	fi
 	part_done "S_DEPS"
 }
@@ -141,19 +145,20 @@ setup_hyprlock() {
 	
 	echo "Styles to be set up: ${styles[*]}"
 	for style in "${styles[@]}"; do
-		"$S_PATH/style-$style"
+		[ ! -x "$S_PATH/style-$style" ] && command_fail 6
+		"$S_PATH/style-$style" || command_fail 7
 	done
 	
 	part_done "S_SETUP"
 }
 
 move_files() {
-	mkdir -p "$HOME"/.local/share/fonts/ttf
-	mv -b "$S_PATH"/to_move/*.ttf "$HOME"/.local/share/fonts/ttf/
+	mkdir -p "$HOME"/.local/share/fonts/ttf || command_fail 8
+	mv -b "$S_PATH"/to_move/*.ttf "$HOME"/.local/share/fonts/ttf/ || command_fail 9
 	echo "Moved fonts to $HOME/.local/share/fonts/ttf/"
 	if [ -d "$S_HYPRPATH" ]; then
 		for file in "$S_PATH"/to_move/*; do
-			mv -b --suffix="-pre-sakoora" "$file" "$S_HYPRPATH"
+			mv -b --suffix="-pre-sakoora" "$file" "$S_HYPRPATH" || command_fail 10
 			echo "$file moved to $S_HYPRPATH"
 		done
 	else

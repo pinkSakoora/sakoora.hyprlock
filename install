@@ -174,12 +174,15 @@ default_selection() {
 	fi
 	
 	echo "Setting style-$default_style as default."
-	ln -sf "$S_PATH/to_move/sakoora.hyprlock/style-$default_style/hyprlock.conf" "$S_PATH/to_move/sakoora.hyprlock/current_style.conf" || command_fail 11
+	ln -sf "$S_HYPRPATH/sakoora.hyprlock/style-$default_style/hyprlock.conf" "$S_PATH/to_move/sakoora.hyprlock/current_style.conf" || command_fail 11
 
 	part_done "S_DEFAULT"
 }
 
 move_files() {
+	S_LOCK="$S_HYPRPATH"/hyprlock.conf
+	S_SOURCE="source = $S_HYPRPATH/sakoora.hyprlock/current_style.conf"
+
 	mkdir -p "$HOME"/.local/share/fonts/ttf || command_fail 8
 	mv -b "$S_PATH"/to_move/*.ttf "$HOME"/.local/share/fonts/ttf/ || command_fail 9
 	ok "Moved fonts to $HOME/.local/share/fonts/ttf/"
@@ -188,27 +191,21 @@ move_files() {
 			mv -b --suffix="-pre-sakoora" "$file" "$S_HYPRPATH" || command_fail 10
 			ok "$file moved to $S_HYPRPATH"
 		done
-	else
-		command_fail 2
-	fi
-
-	S_SAKOORA="$S_HYPRPATH/sakoora.hyprlock"
-	S_LOCK="$S_HYPRPATH/hyprlock.conf"
-	S_SOURCE="source = $S_SAKOORA/current_style.conf"
-
-	if [ -L "$S_LOCK" ]; then
-		echo "$S_LOCK is currently a symlink."
-		mv "$S_LOCK" "$S_LOCK-pre-sakoora"
-		echo -e "\n# sakoora.hyprlock\n$S_SOURCE" > "$S_LOCK"
-		ok "Replaced symlink with config (at $S_LOCK). Old symlink stored at $S_LOCK-pre-sakoora."
-	elif [ -f "$S_LOCK" ]; then
-		if ! grep -Fxq "$S_SOURCE" "$S_LOCK"; then
-			echo -e "\n# sakoora.hyprlock\n$S_SOURCE" >> "$S_LOCK"
-			ok "Added sakoora.hyprlock entry to existing hyprlock config (at $S_LOCK)"
+		if [ -L "$S_LOCK" ]; then
+			echo "$S_LOCK is currently a symlink."
+			mv "$S_LOCK" "$S_LOCK-pre-sakoora"
+			echo -e "\n# sakoora.hyprlock\n$S_SOURCE" > "$S_LOCK"
+			ok "Replaced symlink with config (at $S_LOCK). Old symlink stored at $S_LOCK-pre-sakoora."
+		elif [ -f "$S_LOCK" ]; then
+			mv "$S_LOCK" "$S_LOCK-pre-sakoora"
+			echo -e "\n# sakoora.hyprlock\n$S_SOURCE" > "$S_LOCK"
+			ok "Replaced hyprlock.conf. Old config stored at $S_LOCK-pre-sakoora."
+		else
+			echo -e "# sakoora.hyprlock\n$S_SOURCE" > "$S_LOCK"
+			ok "Created hyprlock config file at $S_LOCK"
 		fi
 	else
-		echo -e "# sakoora.hyprlock\n$S_SOURCE" > "$S_LOCK"
-		ok "Created hyprlock config file at $S_LOCK"
+		command_fail 2
 	fi
 
 	part_done "S_MOVED"
@@ -216,7 +213,7 @@ move_files() {
 
 clear
 show_progress
-if [ "$((S_DEPS+S_SETUP+S_MOVED+S_DEFAULT))" -eq 4 ]; then
+if [ "$((S_DEPS+S_SETUP+S_DEFAULT+S_MOVED))" -eq 4 ]; then
 	echo "Installation has already been completed!"
 	exit
 elif ! confirm "Proceed with installation?"; then
@@ -231,7 +228,7 @@ if [ "$S_SETUP" -eq 0 ]; then
 	setup_hyprlock
 fi
 if [ "$S_DEFAULT" -eq 0 ]; then
-	default_setup
+	default_selection
 fi
 if [ "$S_MOVED" -eq 0 ]; then
 	move_files

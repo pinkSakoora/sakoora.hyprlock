@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Created by pinkSakoora (https://github.com/pinkSakoora)
-# Last changed: 19/07/26
+# Last changed: 05/07/26
 
 export S_PATH="$(dirname "$(readlink -f "$0")")"
 S_HYPRPATH="$HOME"/.config/hypr
@@ -52,6 +52,7 @@ command_fail(){
 		7 ) cross "Style script (at $S_PATH/style-$style) encountered an error during execution. [Execution error: $1]";;
 		8 ) cross "Failed to create directory. Permission denied or path invalid. [Filesystem error: $1]";;
 		9 | 10 ) cross "Failed to move files. Source missing or permission denied. [Filesystem error: $1]";;
+		11 ) cross "Could not create symlink for default style (style-$default_style)";;
 	esac
 	exit "$1"
 }
@@ -67,6 +68,11 @@ show_progress() {
 		cross "Hyprlock configuration not set up."
 	else
 		ok "Hyprlock configuration set up."
+	fi
+	if [ "$S_DEFAULT" -eq 0 ]; then
+		cross "Default style not selected."
+	else
+		ok "Default style selected."
 	fi
 	if [ "$S_MOVED" -eq 0 ]; then
 		cross "Hyprlock configuration and scripts not moved."
@@ -143,6 +149,10 @@ setup_hyprlock() {
 		fi
 	done
 
+	part_done "S_SETUP"
+}
+
+default_selection() {
 	echo "Styles to be set up: ${styles[*]}"
 	for style in "${styles[@]}"; do
 		[ ! -x "$S_PATH/style-$style" ] && command_fail 6
@@ -162,9 +172,11 @@ setup_hyprlock() {
 			fi
 		done
 	fi
+	
 	echo "Setting style-$default_style as default."
+	ln -sf "$S_PATH/to_move/sakoora.hyprlock/style-$default_style/hyprlock.conf" "$S_PATH/to_move/sakoora.hyprlock/current_style.conf" || command_fail 11
 
-	part_done "S_SETUP"
+	part_done "S_DEFAULT"
 }
 
 move_files() {
@@ -184,12 +196,10 @@ move_files() {
 	S_LOCK="$S_HYPRPATH/hyprlock.conf"
 	S_SOURCE="source = $S_SAKOORA/current_style.conf"
 
-	ln -sf "$S_SAKOORA/style-$default_style/hyprlock.conf" "$S_SAKOORA/current_style.conf" || command_fail 11
-
 	if [ -L "$S_LOCK" ]; then
 		echo "$S_LOCK is currently a symlink."
 		mv "$S_LOCK" "$S_LOCK-pre-sakoora"
-		echo -e "\n# sakoora.hyprlock\n$S_SOURCE" >> "$S_LOCK"
+		echo -e "\n# sakoora.hyprlock\n$S_SOURCE" > "$S_LOCK"
 		ok "Replaced symlink with config (at $S_LOCK). Old symlink stored at $S_LOCK-pre-sakoora."
 	elif [ -f "$S_LOCK" ]; then
 		if ! grep -Fxq "$S_SOURCE" "$S_LOCK"; then
@@ -206,7 +216,7 @@ move_files() {
 
 clear
 show_progress
-if [ "$((S_DEPS+S_SETUP+S_MOVED))" -eq 3 ]; then
+if [ "$((S_DEPS+S_SETUP+S_MOVED+S_DEFAULT))" -eq 4 ]; then
 	echo "Installation has already been completed!"
 	exit
 elif ! confirm "Proceed with installation?"; then
@@ -219,6 +229,9 @@ fi
 printenv HYPRLAND_INSTANCE_SIGNATURE &> /dev/null || command_fail 3
 if [ "$S_SETUP" -eq 0 ]; then
 	setup_hyprlock
+fi
+if [ "$S_DEFAULT" -eq 0 ]; then
+	default_setup
 fi
 if [ "$S_MOVED" -eq 0 ]; then
 	move_files

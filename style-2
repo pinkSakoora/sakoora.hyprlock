@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -e
+
+S_SIZEFILE="$S_PATH"/styles/style-2/sizes-hyprlock.sh
+S_SIZEFILECONF="$S_PATH"/styles/style-2/sizes-hyprlock.conf
+
+rm -f "$S_SIZEFILE" "$S_SIZEFILECONF"
+touch "$S_SIZEFILE" "$S_SIZEFILECONF"
+
+echo "Setting up style-2 for your display resolution."
+
+{
+	echo "#################"
+	echo "### UNIVERSAL ###"
+	echo "#################"
+	echo "\$body_font = $((pp/2))"
+	echo "\$huge_font = $((pp*5/2))"
+	echo "\$heading_font = $((pp*5/4))"
+	echo "\$large_font = $((pp*3/4))"
+	echo "\$small_font = $((pp*3/8))"
+	echo "\$image_size = $((pw*3/4))"
+
+	echo "#############"
+	echo "### RIGHT ###"
+	echo "#############"
+	echo "\$gradient_top_offset = $((-pp*3)), $((pp))"
+	echo "\$gradient_mid_offset = $((-pp*3)), $((-pw*3/4))"
+	echo "\$gradient_bot_offset = $((-pp*3)), $((-pw*3/2-pp))"
+
+	echo "############"
+	echo "### LEFT ###"
+	echo "############"
+	echo "\$cut_0_offset = $((pp*3)), $((-pp*4))"
+	echo "\$cut_1_offset = $((pp*3)), $((-pw*3/4-pp*5))"
+	echo "\$cut_2_offset = $((pp*3)), $((-pw*3/2-pp*6))"
+	echo "\$left_text_offset = $((pp*3)), $((-pp*3))"
+
+	echo "##############"
+	echo "### CENTER ###"
+	echo "##############"
+	echo "\$circle_offset = 0, $((pp*5))"
+	echo "\$hostname_offset = 0, 0"
+	echo "\$who_offset = $((width/2-pp*7)), $((-pp*2))"
+	echo "\$username_offset = $((width/2-pp*7)), $((-pp*3))"
+	echo "\$info_offset = $((-width/2+pp*7)), $((-pp*2))"
+	echo "\$info_text_1_offset = $((-width/2+pp*7)), $((-pp*3))"
+	echo "\$info_text_2_offset = $((-width/2+pp*7)), $((-pp*4))"
+	echo "\$info_text_3_offset = $((-width/2+pp*7)), $((-pp*5))"	
+	echo "\$input_field_offset = 0, $((-pw*2/3))"
+	echo "\$circle_size = $((pw/2)), $((pw/2))"
+	echo "\$input_field_size = $((pw*2/3)), $((pp*2))"
+} >> "$S_SIZEFILECONF"
+{
+	echo "gradient_size=$((pw))x$((pw*3/4))"
+	echo "cut_size_x=$((pw*2))"
+	echo "cut_size_y=$((pw*3/2))"
+} >> "$S_SIZEFILE"
+
+mv "$S_PATH"/styles/style-2 "$S_PATH"/to_move/sakoora.hyprlock/

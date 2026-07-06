@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+source "$HOME/.config/hypr/sakoora.hyprlock/style-2/sizes-hyprlock.sh"
+source "$HOME/.config/hypr/sakoora.hyprlock/colors-hyprlock.sh"
+
+WALL_PATH="$HOME/.config/themes/wallpaper.png"
+CACHE_DIR="$HOME/.cache/hyprlock-cache/style-2"
+[[ ! -d "$CACHE_DIR" ]] && mkdir -p "$CACHE_DIR"
+
+img_width="$(identify -format "%w" "$WALL_PATH")"
+img_height="$(identify -format "%h" "$WALL_PATH")"
+
+mapfile -t x_offsets < <(shuf -i 0-$((img_width-cut_size_x)) -n 3)
+mapfile -t y_offsets < <(shuf -i 0-$((img_height-cut_size_y)) -n 3) 
+
+for i in {0..2}; do
+	magick \( "$WALL_PATH" -crop "$cut_size_x"x"$cut_size_y"+"${x_offsets[i]}"+"${y_offsets[i]}" +repage -resize 50% \) "$CACHE_DIR/cut_$i.png"
+done
+
+magick -size $gradient_size gradient:$color1-$color2 "$CACHE_DIR/gradient_top.png"
+magick -size $gradient_size -define gradient:direction=SouthWest gradient:$background-$color1 "$CACHE_DIR/gradient_mid.png"
+magick -size $gradient_size -define gradient:direction=West gradient:$background-$color2 "$CACHE_DIR/gradient_bot.png"
